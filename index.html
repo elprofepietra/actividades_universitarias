@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDN Quest – Arquetipos & Simuladores | UADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a18;
+    --panel: #0d1a2e;
+    --panel2: #0a1525;
+    --accent: #00f5d4;
+    --accent2: #f72585;
+    --accent3: #ffd60a;
+    --blue: #4cc9f0;
+    --text: #e8f0fe;
+    --muted: #7b8fb5;
+    --success: #06d6a0;
+    --error: #ef476f;
+    --glow: 0 0 18px rgba(0,245,212,0.5);
+    --glow2: 0 0 18px rgba(247,37,133,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* STARS BACKGROUND */
+  .stars {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse at 20% 30%, rgba(76,201,240,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(247,37,133,0.05) 0%, transparent 50%),
+                var(--bg);
+  }
+  .stars::before, .stars::after {
+    content: '';
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 60%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 45%, rgba(255,255,255,0.3) 0%, transparent 100%);
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 860px; margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  /* HEADER */
+  .game-header {
+    text-align: center; padding: 28px 0 16px;
+    border-bottom: 1px solid rgba(0,245,212,0.2);
+    margin-bottom: 28px;
+  }
+  .game-header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--accent), var(--blue), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+  .game-header .subtitle {
+    color: var(--muted); font-size: 0.9rem; margin-top: 6px; letter-spacing: 1px;
+  }
+  .score-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border: 1px solid rgba(0,245,212,0.15);
+    border-radius: 12px; padding: 10px 20px; margin-bottom: 20px;
+    font-size: 0.9rem; color: var(--muted);
+  }
+  .score-bar .pts {
+    font-family: 'Orbitron', sans-serif; color: var(--accent3);
+    font-size: 1.1rem; font-weight: 700;
+  }
+  .score-bar .player-name { color: var(--blue); font-weight: 600; }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    height: 6px; background: rgba(255,255,255,0.07);
+    border-radius: 6px; margin-bottom: 26px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--blue));
+    border-radius: 6px; transition: width 0.5s ease;
+    box-shadow: var(--glow);
+  }
+
+  /* SCREENS */
+  .screen { display: none; animation: fadeIn 0.4s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* CARD */
+  .card {
+    background: var(--panel);
+    border: 1px solid rgba(0,245,212,0.12);
+    border-radius: 18px; padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+  }
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem; color: var(--accent); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .card-tag {
+    display: inline-block; padding: 3px 10px;
+    background: rgba(0,245,212,0.1); border: 1px solid rgba(0,245,212,0.3);
+    border-radius: 20px; font-size: 0.75rem; color: var(--accent); margin-bottom: 14px;
+  }
+  .question-text {
+    font-size: 1.1rem; font-weight: 600; line-height: 1.6;
+    color: var(--text); margin-bottom: 22px;
+  }
+
+  /* OPTIONS */
+  .options { display: grid; gap: 12px; }
+  .option-btn {
+    background: var(--panel2); border: 2px solid rgba(255,255,255,0.08);
+    color: var(--text); border-radius: 12px; padding: 14px 18px;
+    font-family: 'Exo 2', sans-serif; font-size: 0.95rem;
+    cursor: pointer; text-align: left; transition: all 0.2s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--blue); background: rgba(76,201,240,0.08);
+    transform: translateX(4px);
+  }
+  .option-btn.selected { border-color: var(--blue); background: rgba(76,201,240,0.12); }
+  .option-btn.correct  { border-color: var(--success) !important; background: rgba(6,214,160,0.15) !important; color: var(--success) !important; }
+  .option-btn.wrong    { border-color: var(--error) !important; background: rgba(239,71,111,0.12) !important; color: var(--error) !important; }
+  .option-btn:disabled { cursor: default; }
+  .opt-letter {
+    width: 28px; height: 28px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* TF BUTTONS */
+  .tf-group { display: flex; gap: 14px; justify-content: center; margin-top: 10px; }
+  .tf-btn {
+    flex: 1; max-width: 160px; padding: 16px; border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.1); background: var(--panel2);
+    font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; color: var(--text);
+  }
+  .tf-btn:hover:not(:disabled) { transform: scale(1.04); }
+  .tf-btn[data-v="true"]:hover:not(:disabled)  { border-color: var(--success); background: rgba(6,214,160,0.1); color: var(--success); }
+  .tf-btn[data-v="false"]:hover:not(:disabled) { border-color: var(--error); background: rgba(239,71,111,0.1); color: var(--error); }
+  .tf-btn.correct  { border-color: var(--success) !important; background: rgba(6,214,160,0.15) !important; color: var(--success) !important; }
+  .tf-btn.wrong    { border-color: var(--error) !important; background: rgba(239,71,111,0.12) !important; color: var(--error) !important; }
+  .tf-btn:disabled { cursor: default; }
+
+  /* FEEDBACK BOX */
+  .feedback-box {
+    border-radius: 12px; padding: 16px 20px;
+    margin-top: 16px; font-size: 0.93rem; line-height: 1.6;
+    display: none; animation: fadeIn 0.3s ease;
+  }
+  .feedback-box.show { display: block; }
+  .feedback-box.ok  { background: rgba(6,214,160,0.1); border: 1px solid rgba(6,214,160,0.3); color: var(--success); }
+  .feedback-box.err { background: rgba(239,71,111,0.1); border: 1px solid rgba(239,71,111,0.3); color: #ff8fa3; }
+  .feedback-title { font-weight: 700; margin-bottom: 4px; }
+
+  /* MATCHING GAME */
+  .match-wrap { display: flex; gap: 16px; }
+  .match-col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .match-col h4 { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .match-item {
+    background: var(--panel2); border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 12px 14px; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.2s; line-height: 1.4;
+    min-height: 54px; display: flex; align-items: center;
+  }
+  .match-item:hover:not(.matched):not(.wrong-match) {
+    border-color: var(--blue); background: rgba(76,201,240,0.07);
+  }
+  .match-item.selected-left  { border-color: var(--accent3); background: rgba(255,214,10,0.1); color: var(--accent3); }
+  .match-item.matched  { border-color: var(--success); background: rgba(6,214,160,0.1); color: var(--success); cursor: default; }
+  .match-item.wrong-match { border-color: var(--error); background: rgba(239,71,111,0.1); animation: shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .match-item.disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-block; padding: 13px 30px; border-radius: 12px;
+    font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 1px; border: none;
+    text-transform: uppercase;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    color: #050a18; box-shadow: var(--glow);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(0,245,212,0.7); }
+  .btn-secondary {
+    background: transparent; border: 2px solid var(--accent2);
+    color: var(--accent2); box-shadow: var(--glow2);
+  }
+  .btn-secondary:hover { background: rgba(247,37,133,0.1); transform: translateY(-2px); }
+  .btn-lg { padding: 16px 40px; font-size: 1rem; }
+  .btn-sm { padding: 9px 20px; font-size: 0.78rem; }
+  .btn-next { margin-top: 20px; }
+
+  /* WELCOME SCREEN */
+  .welcome-hero {
+    text-align: center; padding: 40px 0;
+  }
+  .welcome-hero .big-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--blue), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.1; margin-bottom: 12px;
+  }
+  .welcome-hero .tagline {
+    font-size: 1rem; color: var(--muted); margin-bottom: 32px; letter-spacing: 1px;
+  }
+  .icon-row { font-size: 2.5rem; margin-bottom: 30px; }
+  .input-group { max-width: 380px; margin: 0 auto 24px; text-align: left; }
+  .input-group label { display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
+  .input-group input {
+    width: 100%; padding: 14px 18px; border-radius: 12px;
+    background: var(--panel); border: 2px solid rgba(0,245,212,0.2);
+    color: var(--text); font-family: 'Exo 2', sans-serif; font-size: 1rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-group input:focus { border-color: var(--accent); box-shadow: var(--glow); }
+  .activities-preview {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+    margin-top: 32px; text-align: left;
+  }
+  .act-card {
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px; padding: 16px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .act-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .act-card h4 { font-size: 0.85rem; font-weight: 700; color: var(--blue); margin-bottom: 3px; }
+  .act-card p { font-size: 0.77rem; color: var(--muted); line-height: 1.4; }
+
+  /* SECTION INTRO */
+  .section-intro { text-align: center; padding: 36px 0; }
+  .section-intro .big-icon { font-size: 3.5rem; margin-bottom: 14px; }
+  .section-intro h2 {
+    font-family: 'Orbitron', sans-serif; font-size: 1.4rem;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .section-intro p { color: var(--muted); line-height: 1.6; max-width: 480px; margin: 0 auto 28px; }
+  .pts-badge {
+    display: inline-block; padding: 6px 16px;
+    background: rgba(255,214,10,0.1); border: 1px solid rgba(255,214,10,0.3);
+    border-radius: 20px; font-size: 0.85rem; color: var(--accent3); font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  /* MEMORY NOTE */
+  .memory-note {
+    background: linear-gradient(135deg, rgba(76,201,240,0.06), rgba(0,245,212,0.06));
+    border: 1px solid rgba(76,201,240,0.2); border-radius: 14px;
+    padding: 20px 24px; margin-top: 20px;
+  }
+  .memory-note .note-title {
+    font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--blue);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .memory-note ul { padding-left: 18px; }
+  .memory-note li { font-size: 0.88rem; color: var(--text); margin-bottom: 6px; line-height: 1.5; }
+  .memory-note strong { color: var(--accent); }
+
+  /* SECTION SUMMARY */
+  .section-summary {
+    background: var(--panel); border: 1px solid rgba(0,245,212,0.15);
+    border-radius: 18px; padding: 28px; text-align: center; margin-bottom: 20px;
+  }
+  .section-summary .score-circle {
+    width: 100px; height: 100px; border-radius: 50%;
+    border: 4px solid var(--accent); margin: 0 auto 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; background: rgba(0,245,212,0.05);
+    box-shadow: var(--glow);
+  }
+  .section-summary .score-circle .big { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
+  .section-summary .score-circle .small { font-size: 0.7rem; color: var(--muted); }
+  .section-summary h3 { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--text); margin-bottom: 8px; }
+
+  /* FINAL SCREEN */
+  .final-podium { text-align: center; padding: 20px 0; }
+  .trophy { font-size: 5rem; margin-bottom: 12px; animation: bounce 1s ease infinite alternate; }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+  .final-podium h2 {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(1.4rem, 4vw, 2rem);
+    color: var(--accent3); margin-bottom: 6px;
+  }
+  .final-score-big {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 900; color: var(--accent);
+    text-shadow: var(--glow); line-height: 1; margin: 10px 0;
+  }
+  .rank-badge {
+    display: inline-block; padding: 8px 24px;
+    border-radius: 30px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;
+    font-weight: 700; letter-spacing: 2px; margin-bottom: 24px;
+  }
+  .breakdown-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin: 24px 0;
+  }
+  .breakdown-item {
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px; padding: 14px 12px; text-align: center;
+  }
+  .breakdown-item .bd-pts { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; color: var(--accent); font-weight: 700; }
+  .breakdown-item .bd-label { font-size: 0.77rem; color: var(--muted); margin-top: 4px; }
+  .leaderboard-note {
+    background: rgba(247,37,133,0.07); border: 1px solid rgba(247,37,133,0.2);
+    border-radius: 12px; padding: 16px 20px; margin-top: 20px; font-size: 0.88rem; color: #ff8fa3; line-height: 1.6;
+  }
+  .step-indicator {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;
+  }
+  .step-dot {
+    width: 32px; height: 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.1); transition: all 0.3s;
+  }
+  .step-dot.done  { background: var(--success); }
+  .step-dot.active { background: var(--accent); box-shadow: var(--glow); }
+  .step-dot.pending { background: rgba(255,255,255,0.1); }
+  .correct-flag { font-size: 0.8rem; color: var(--muted); margin-left: 4px; }
+
+  /* COUNTER */
+  .q-counter { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* DRAG SORT */
+  .sort-list { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+  .sort-item {
+    background: var(--panel2); border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 12px 16px; cursor: grab;
+    display: flex; align-items: center; gap: 12px; font-size: 0.92rem;
+    user-select: none; transition: border-color 0.2s;
+  }
+  .sort-item:active { cursor: grabbing; opacity: 0.8; }
+  .sort-item.dragging { border-color: var(--accent); opacity: 0.6; }
+  .sort-item.drag-over { border-color: var(--accent3); background: rgba(255,214,10,0.07); }
+  .sort-num {
+    width: 24px; height: 24px; border-radius: 6px; background: rgba(0,245,212,0.1);
+    border: 1px solid rgba(0,245,212,0.3); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+  }
+  .sort-item .drag-handle { color: var(--muted); font-size: 1.1rem; flex-shrink: 0; }
+
+  @media (max-width: 600px) {
+    .card { padding: 18px 16px; }
+    .match-wrap { flex-direction: column; }
+    .tf-group { gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="container">
+
+  <div class="game-header">
+    <h1>⚡ SDN QUEST</h1>
+    <div class="subtitle">UADE · Simulación de Negocios · Mg. Ezequiel Pietracupa</div>
+  </div>
+
+  <!-- SCORE BAR (hidden at start) -->
+  <div class="score-bar" id="scoreBar" style="display:none">
+    <span>👤 <span class="player-name" id="playerNameDisplay">—</span></span>
+    <span>Actividad <span id="actNum">1</span> de 5</span>
+    <span class="pts">⭐ <span id="ptsDisplay">0</span> pts</span>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-wrap" id="progressWrap" style="display:none">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <!-- STEP INDICATORS -->
+  <div class="step-indicator" id="stepIndicator" style="display:none">
+    <div class="step-dot active" id="step0"></div>
+    <div class="step-dot" id="step1"></div>
+    <div class="step-dot" id="step2"></div>
+    <div class="step-dot" id="step3"></div>
+    <div class="step-dot" id="step4"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 0: WELCOME -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen active" id="s-welcome">
+    <div class="welcome-hero">
+      <div class="icon-row">🎮 🧠 🔄</div>
+      <div class="big-title">SDN QUEST</div>
+      <div class="tagline">Arquetipos Sistémicos & Simuladores — ¿Cuánto aprendiste?</div>
+      <div class="input-group">
+        <label>Tu nombre / apodo</label>
+        <input type="text" id="playerNameInput" placeholder="Ingresa tu nombre..." maxlength="24"/>
+      </div>
+      <button class="btn btn-primary btn-lg" onclick="startGame()">INICIAR MISIÓN 🚀</button>
+    </div>
+    <div class="activities-preview">
+      <div class="act-card">
+        <div class="act-icon">🔀</div>
+        <div><h4>Emparejamiento</h4><p>Relaciona cada arquetipo con su descripción</p></div>
+      </div>
+      <div class="act-card">
+        <div class="act-icon">✅</div>
+        <div><h4>Verdadero/Falso</h4><p>5 afirmaciones sobre ciclos y arquetipos</p></div>
+      </div>
+      <div class="act-card">
+        <div class="act-icon">🔢</div>
+        <div><h4>Ordenar</h4><p>Ordena los elementos del arquetipo</p></div>
+      </div>
+      <div class="act-card">
+        <div class="act-icon">🎯</div>
+        <div><h4>Opción múltiple</h4><p>Preguntas sobre arquetipos sistémicos</p></div>
+      </div>
+      <div class="act-card">
+        <div class="act-icon">💡</div>
+        <div><h4>Simuladores</h4><p>3 preguntas de las clases 1 y 2</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 1: INTRO ACT 1 — MATCHING -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen" id="s-act1-intro">
+    <div class="section-intro">
+      <div class="big-icon">🔀</div>
+      <h2>Actividad 1: Emparejamiento</h2>
+      <p>Relaciona cada <strong>arquetipo sistémico</strong> con la característica clave que lo define. ¡Clickeá un arquetipo y luego su descripción!</p>
+      <div class="pts-badge">⭐ Hasta 50 puntos</div><br>
+      <button class="btn btn-primary" onclick="showScreen('s-act1')">COMENZAR →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: MATCHING ACTIVITY -->
+  <div class="screen" id="s-act1">
+    <div class="card">
+      <div class="card-title">Actividad 1</div>
+      <div class="card-tag">🔀 Emparejamiento de Arquetipos</div>
+      <div class="question-text">Relacioná cada arquetipo con su descripción clave. Clickeá primero el arquetipo (izquierda) y luego su match (derecha).</div>
+      <div class="match-wrap">
+        <div class="match-col">
+          <h4>Arquetipos</h4>
+          <div class="match-item" id="ml-0" onclick="selectLeft(0)">Soluciones Contraproducentes</div>
+          <div class="match-item" id="ml-1" onclick="selectLeft(1)">Límites de Crecimiento</div>
+          <div class="match-item" id="ml-2" onclick="selectLeft(2)">Desplazamiento de la Carga</div>
+          <div class="match-item" id="ml-3" onclick="selectLeft(3)">Tragedia del Terreno Común</div>
+          <div class="match-item" id="ml-4" onclick="selectLeft(4)">Adversarios Accidentales</div>
+        </div>
+        <div class="match-col">
+          <h4>Descripciones</h4>
+          <div class="match-item" id="mr-0" onclick="selectRight(0)">Dos actores compiten por un recurso compartido que se degrada con el uso individual</div>
+          <div class="match-item" id="mr-1" onclick="selectRight(1)">La solución rápida crea "heroísmo de crisis" y genera adicción, debilitando la solución fundamental</div>
+          <div class="match-item" id="mr-2" onclick="selectRight(2)">El crecimiento inicial choca con un proceso limitativo que frena o revierte el desempeño</div>
+          <div class="match-item" id="mr-3" onclick="selectRight(3)">Las acciones de A para mejorar sus resultados involuntariamente perjudican a B, y viceversa</div>
+          <div class="match-item" id="mr-4" onclick="selectRight(4)">La solución rápida alivia el síntoma pero una demora genera consecuencias no deseadas que agravan el problema</div>
+        </div>
+      </div>
+      <div id="match-feedback" class="feedback-box"></div>
+      <div id="match-score-msg" style="margin-top:12px; font-size:0.9rem; color:var(--muted)"></div>
+    </div>
+    <div id="act1-memory" style="display:none">
+      <div class="memory-note">
+        <div class="note-title">📌 Nota de Memoria — Arquetipos Sistémicos</div>
+        <ul>
+          <li><strong>Soluciones Contraproducentes:</strong> La "solución rápida" alivia el síntoma pero, con demora, genera consecuencias no deseadas que amplifican el problema original.</li>
+          <li><strong>Límites de Crecimiento:</strong> Un proceso de crecimiento choca con un proceso limitativo. Empujar más el crecimiento en vez de atacar el límite empeora la situación.</li>
+          <li><strong>Desplazamiento de la Carga:</strong> Se vuelve adicto a soluciones heroicas de corto plazo, debilitando la capacidad de resolver la causa raíz.</li>
+          <li><strong>Tragedia del Terreno Común:</strong> Cada actor actúa racionalmente en su propio interés, pero el resultado colectivo destruye el recurso compartido.</li>
+          <li><strong>Adversarios Accidentales:</strong> Dos socios se vuelven involuntariamente obstáculos el uno para el otro al buscar mejorar sus propios resultados.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary btn-next" onclick="showScreen('s-act2-intro')">SIGUIENTE ACTIVIDAD →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 2: VERDADERO/FALSO -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen" id="s-act2-intro">
+    <div class="section-intro">
+      <div class="big-icon">✅</div>
+      <h2>Actividad 2: Verdadero o Falso</h2>
+      <p>5 afirmaciones sobre los <strong>ciclos y arquetipos sistémicos</strong>. Respondé con cuidado — cada respuesta correcta suma puntos.</p>
+      <div class="pts-badge">⭐ Hasta 50 puntos</div><br>
+      <button class="btn btn-primary" onclick="startTF()">COMENZAR →</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-act2">
+    <div class="card" id="tf-card">
+      <div class="card-title">Actividad 2</div>
+      <div class="card-tag">✅ Verdadero o Falso</div>
+      <div class="q-counter" id="tf-counter">Pregunta 1 de 5</div>
+      <div class="question-text" id="tf-question">—</div>
+      <div class="tf-group">
+        <button class="tf-btn" data-v="true"  onclick="answerTF(true)"  id="tf-true">✔ VERDADERO</button>
+        <button class="tf-btn" data-v="false" onclick="answerTF(false)" id="tf-false">✘ FALSO</button>
+      </div>
+      <div id="tf-feedback" class="feedback-box"></div>
+      <button class="btn btn-primary btn-next" id="tf-next-btn" style="display:none" onclick="nextTF()">SIGUIENTE →</button>
+    </div>
+    <div id="act2-memory" style="display:none">
+      <div class="memory-note">
+        <div class="note-title">📌 Nota de Memoria — Ciclos Sistémicos</div>
+        <ul>
+          <li><strong>Ciclos Reforzadores:</strong> Generan crecimiento exponencial o colapso (efecto bola de nieve). Pueden ser virtuosos o viciosos.</li>
+          <li><strong>Ciclos Compensadores:</strong> Generan fuerzas de resistencia que limitan el crecimiento, buscan el equilibrio respecto a un objetivo/meta.</li>
+          <li><strong>Demora:</strong> Puntos donde la cadena de influencia tarda en manifestarse. En compensadores, puede cambiar drásticamente la conducta del sistema.</li>
+          <li><strong>Los arquetipos</strong> fueron desarrollados a mediados de los 80 por Charles Kiefer en Innovation Associates. La palabra viene del griego: "el primero de su especie".</li>
+          <li><strong>Soluciones Contraproducentes:</strong> La solución rápida alivia el síntoma pero la demora genera consecuencias no deseadas que empeoran el problema.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary btn-next" onclick="showScreen('s-act3-intro')">SIGUIENTE ACTIVIDAD →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 3: ORDENAR (SORT) -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen" id="s-act3-intro">
+    <div class="section-intro">
+      <div class="big-icon">🔢</div>
+      <h2>Actividad 3: Ordena el Ciclo</h2>
+      <p>Ordená correctamente los elementos del arquetipo <strong>"Desplazamiento de la Carga"</strong> arrastrando los bloques.</p>
+      <div class="pts-badge">⭐ Hasta 30 puntos</div><br>
+      <button class="btn btn-primary" onclick="startSort()">COMENZAR →</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-act3">
+    <div class="card">
+      <div class="card-title">Actividad 3</div>
+      <div class="card-tag">🔢 Ordenar el flujo del arquetipo</div>
+      <div class="question-text">Ordená los elementos del arquetipo <strong>"Desplazamiento de la Carga"</strong> de inicio a fin (1 = inicio del ciclo problemático).</div>
+      <div class="sort-list" id="sortList"></div>
+      <button class="btn btn-primary" onclick="checkSort()" id="sortCheckBtn">VERIFICAR ORDEN ✓</button>
+      <div id="sort-feedback" class="feedback-box"></div>
+    </div>
+    <div id="act3-memory" style="display:none">
+      <div class="memory-note">
+        <div class="note-title">📌 Nota de Memoria — Desplazamiento de la Carga</div>
+        <ul>
+          <li><strong>Síntoma</strong> (ej: demoras en lanzamiento) → <strong>Solución Rápida</strong> → "Heroísmo de crisis" (ciclo compensador) → <strong>Recompensa por conducta heróica</strong> (ciclo reforzador) → <strong>Adicción a los actos heroicos</strong> → la Fuente del problema no se resuelve.</li>
+          <li>El ciclo compensador de la <strong>solución fundamental</strong> (mejorar la gestión de proyectos) queda debilitado porque siempre hay "héroes" disponibles.</li>
+          <li><strong>Clave:</strong> Los efectos laterales de la solución rápida crean consecuencias indeseadas que refuerzan la dependencia.</li>
+          <li>La demora entre la solución rápida y sus efectos secundarios hace difícil ver la conexión causal.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary btn-next" onclick="showScreen('s-act4-intro')">SIGUIENTE ACTIVIDAD →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 4: MULTIPLE CHOICE — ARQUETIPOS -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen" id="s-act4-intro">
+    <div class="section-intro">
+      <div class="big-icon">🎯</div>
+      <h2>Actividad 4: Opción Múltiple</h2>
+      <p>4 preguntas de opción múltiple sobre <strong>arquetipos sistémicos</strong>. Solo una opción es correcta por pregunta.</p>
+      <div class="pts-badge">⭐ Hasta 40 puntos</div><br>
+      <button class="btn btn-primary" onclick="startMC('act4')">COMENZAR →</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-act4">
+    <div class="card" id="mc4-card">
+      <div class="card-title">Actividad 4</div>
+      <div class="card-tag">🎯 Opción Múltiple — Arquetipos</div>
+      <div class="q-counter" id="mc4-counter">Pregunta 1 de 4</div>
+      <div class="question-text" id="mc4-question">—</div>
+      <div class="options" id="mc4-options"></div>
+      <div id="mc4-feedback" class="feedback-box"></div>
+      <button class="btn btn-primary btn-next" id="mc4-next-btn" style="display:none" onclick="nextMC('act4')">SIGUIENTE →</button>
+    </div>
+    <div id="act4-memory" style="display:none">
+      <div class="memory-note">
+        <div class="note-title">📌 Nota de Memoria — Identificar Arquetipos</div>
+        <ul>
+          <li><strong>¿Soluciones Contraproducentes?</strong> → Hay una solución rápida que alivia el síntoma pero la demora genera consecuencias no deseadas que agravan el problema.</li>
+          <li><strong>¿Límites de Crecimiento?</strong> → El crecimiento se detiene/revierte por un proceso limitativo (capacidad, recurso, restricción). La acción correctiva ataca al límite, no refuerza el crecimiento.</li>
+          <li><strong>¿Desplazamiento de la Carga?</strong> → Se generan "héroes de crisis" que resuelven el síntoma, pero la solución fundamental queda cada vez más debilitada.</li>
+          <li><strong>¿Tragedia del Terreno Común?</strong> → Dos o más actores con ciclos reforzadores propios comparten un recurso limitado; cada uno actúa racionalmente pero agotan el recurso común.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary btn-next" onclick="showScreen('s-act5-intro')">ÚLTIMA ACTIVIDAD →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN 5: SIMULADORES -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen" id="s-act5-intro">
+    <div class="section-intro">
+      <div class="big-icon">💡</div>
+      <h2>Actividad 5: Simuladores</h2>
+      <p>3 preguntas sobre <strong>Simulación y Dinámica de Sistemas</strong> de las Clases 1 y 2. ¡Última actividad!</p>
+      <div class="pts-badge">⭐ Hasta 30 puntos</div><br>
+      <button class="btn btn-primary" onclick="startMC('act5')">COMENZAR →</button>
+    </div>
+  </div>
+
+  <div class="screen" id="s-act5">
+    <div class="card" id="mc5-card">
+      <div class="card-title">Actividad 5</div>
+      <div class="card-tag">💡 Simuladores & Dinámica de Sistemas</div>
+      <div class="q-counter" id="mc5-counter">Pregunta 1 de 3</div>
+      <div class="question-text" id="mc5-question">—</div>
+      <div class="options" id="mc5-options"></div>
+      <div id="mc5-feedback" class="feedback-box"></div>
+      <button class="btn btn-primary btn-next" id="mc5-next-btn" style="display:none" onclick="nextMC('act5')">SIGUIENTE →</button>
+    </div>
+    <div id="act5-memory" style="display:none">
+      <div class="memory-note">
+        <div class="note-title">📌 Nota de Memoria — Simulación & Dinámica de Sistemas</div>
+        <ul>
+          <li><strong>Sistema:</strong> conjunto interrelacionado de partes que actúan hacia un fin lógico. Tiene entradas, procesamiento y salidas.</li>
+          <li><strong>Modelo:</strong> representación simplificada de un sistema para comprender, predecir y controlar su comportamiento.</li>
+          <li><strong>Simulación:</strong> experimentar con un modelo para extraer conclusiones o realizar predicciones.</li>
+          <li><strong>Simulador de caja negra:</strong> no se accede a las relaciones causa-efecto internas. <strong>Caja transparente:</strong> se pueden conocer las gráficas causales mediante dinámica de sistemas.</li>
+          <li><strong>¿Cuándo simular?</strong> Cuando el sistema real es peligroso, costoso o imposible de manipular; cuando se necesita estudiar pasado/presente/futuro en tiempo controlado.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary btn-next" onclick="showFinal()">VER RESULTADO FINAL 🏆</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN FINAL -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="screen" id="s-final">
+    <div class="final-podium">
+      <div class="trophy" id="finalTrophy">🏆</div>
+      <h2 id="finalRankTitle">¡Excelente!</h2>
+      <div class="final-score-big" id="finalScoreBig">0</div>
+      <div style="color:var(--muted); margin-bottom:8px">puntos sobre 200</div>
+      <div class="rank-badge" id="finalBadge">—</div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="breakdown-item"><div class="bd-pts" id="bd1">—</div><div class="bd-label">⚙ Act.1 Emparejamiento</div></div>
+      <div class="breakdown-item"><div class="bd-pts" id="bd2">—</div><div class="bd-label">✅ Act.2 V/F</div></div>
+      <div class="breakdown-item"><div class="bd-pts" id="bd3">—</div><div class="bd-label">🔢 Act.3 Ordenar</div></div>
+      <div class="breakdown-item"><div class="bd-pts" id="bd4">—</div><div class="bd-label">🎯 Act.4 Múltiple</div></div>
+      <div class="breakdown-item"><div class="bd-pts" id="bd5">—</div><div class="bd-label">💡 Act.5 Simul.</div></div>
+    </div>
+    <div class="memory-note" style="margin-top:10px">
+      <div class="note-title">🎓 Resumen Final de la Materia</div>
+      <ul>
+        <li><strong>Dinámica de Sistemas</strong> analiza cómo la <strong>estructura de realimentación</strong> domina la toma de decisiones.</li>
+        <li>Los 5 arquetipos vistos (Soluciones Contraproducentes, Límites de Crecimiento, Desplazamiento de la Carga, Tragedia del Terreno Común, Adversarios Accidentales) son patrones recurrentes en sistemas complejos.</li>
+        <li>La <strong>simulación</strong> permite experimentar con modelos para aprender <em>sin consecuencias reales</em>, acelerando el aprendizaje ("aprender haciendo" — David Kolb).</li>
+        <li>Las estrategias empresariales (integración, intensivas, diversificación, defensivas) deben seleccionarse según el momento del <strong>ciclo de vida del negocio</strong>.</li>
+      </ul>
+    </div>
+    <div class="leaderboard-note" id="leaderboard-note">
+      📋 <strong>¡Comparti tu puntaje!</strong> Anotá tu nombre y puntaje para el ranking de la clase: <strong id="finalShareText">—</strong>
+    </div>
+    <div style="text-align:center; margin-top:24px">
+      <button class="btn btn-secondary" onclick="restartGame()">🔄 JUGAR DE NUEVO</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let playerName = '';
+let totalPts = 0;
+let actPts = [0, 0, 0, 0, 0];
+
+// ─── MATCHING DATA ───────────────────────────────────────
+// left index → correct right index
+const matchAnswers = { 0:4, 1:2, 2:1, 3:0, 4:3 };
+let matchState = { selected: null, matched: new Set(), wrong: 0 };
+
+// ─── TRUE/FALSE DATA ─────────────────────────────────────
+const tfQuestions = [
+  { q: "Los ciclos reforzadores generan crecimiento exponencial o colapso a un ritmo cada vez más acelerado.", ans: true, exp: "✔ CORRECTO. Los ciclos reforzadores son el efecto multiplicador o 'bola de nieve' — amplifican cualquier cambio, ya sea para crecer (círculo virtuoso) o para colapsar (círculo vicioso)." },
+  { q: "Los ciclos compensadores siempre aceleran el crecimiento del sistema, empujándolo hacia arriba.", ans: false, exp: "✘ FALSO. Los ciclos compensadores generan fuerzas de RESISTENCIA que LIMITAN el crecimiento. Buscan el equilibrio respecto a un objetivo o meta, y conservan la estabilidad del sistema." },
+  { q: "La demora puede cambiar drásticamente la conducta del sistema, especialmente en ciclos compensadores.", ans: true, exp: "✔ CORRECTO. La demora es un punto donde la cadena de influencia tarda en manifestarse. En ciclos compensadores puede hacer que se oscile o que el sistema reaccione de formas inesperadas." },
+  { q: "En el arquetipo 'Desplazamiento de la Carga', la solución fundamental se fortalece con el tiempo porque se resuelve el síntoma.", ans: false, exp: "✘ FALSO. Es al revés: al resolver el síntoma con soluciones rápidas 'heroicas', la solución fundamental (atacar la causa raíz) se DEBILITA progresivamente. Se genera adicción a los actos heroicos." },
+  { q: "Los arquetipos sistémicos fueron desarrollados a mediados de los años 80 por Charles Kiefer en Innovation Associates.", ans: true, exp: "✔ CORRECTO. Charles Kiefer los desarrolló en Innovation Associates para mejorar la comunicación y catalogar las conductas más comunes en sistemas. La palabra 'arquetipo' viene del griego 'el primero de su especie'." }
+];
+let tfIdx = 0, tfScore = 0;
+
+// ─── SORT DATA ───────────────────────────────────────────
+const sortItemsData = [
+  { id:'s1', label:'Síntoma: Demoras en el lanzamiento del producto' },
+  { id:'s2', label:'Solución Rápida → Heroísmo de crisis (Ciclo Compensador)' },
+  { id:'s3', label:'Recompensa por conducta heroica (Ciclo Reforzador)' },
+  { id:'s4', label:'Adicción a los actos heroicos' },
+  { id:'s5', label:'La fuente del problema no se resuelve → el síntoma regresa' },
+];
+const sortCorrectOrder = ['s1','s2','s3','s4','s5'];
+let sortCurrentOrder = [];
+let dragSrcIdx = null;
+
+// ─── MULTIPLE CHOICE — ACT 4 ─────────────────────────────
+const mc4Questions = [
+  {
+    q: "¿Cuál arquetipo describe cuando una solución rápida alivia el síntoma pero genera consecuencias no deseadas a largo plazo?",
+    opts: ["Límites de Crecimiento","Soluciones Contraproducentes","Desplazamiento de la Carga","Adversarios Accidentales"],
+    ans: 1,
+    exp: "SOLUCIONES CONTRAPRODUCENTES: La solución rápida (ciclo compensador) alivia el síntoma, pero con demora genera consecuencias no deseadas (ciclo reforzador negativo) que agravan el problema original."
+  },
+  {
+    q: "En el arquetipo 'Tragedia del Terreno Común', ¿qué ocurre con el recurso compartido?",
+    opts: ["El recurso aumenta porque cada actor lo cuida","Cada actor actúa racionalmente en su interés pero el resultado colectivo degrada el recurso","El recurso se redistribuye equitativamente entre todos los actores","El recurso se privatiza para evitar el conflicto"],
+    ans: 1,
+    exp: "TRAGEDIA DEL TERRENO COMÚN: Cada actor tiene su propio ciclo reforzador de crecimiento, pero todos compiten por un recurso limitado compartido. La 'Demora' en sentir el impacto hace que cada uno siga creciendo hasta que el recurso colapsa."
+  },
+  {
+    q: "En el ejemplo de P&G y Wal-Mart del material de clase, ¿qué arquetipo se ilustra?",
+    opts: ["Límites de Crecimiento","Tragedia del Terreno Común","Adversarios Accidentales","Desplazamiento de la Carga"],
+    ans: 2,
+    exp: "ADVERSARIOS ACCIDENTALES: Las acciones de P&G para mejorar su rentabilidad (ej. gestionar artículos promocionales) involuntariamente obstaculizan a Wal-Mart, y viceversa. Ambos son 'adversarios por accidente', no por intención."
+  },
+  {
+    q: "¿En cuál arquetipo aparece el concepto de 'proceso limitativo' que frena el crecimiento?",
+    opts: ["Soluciones Contraproducentes","Adversarios Accidentales","Desplazamiento de la Carga","Límites de Crecimiento"],
+    ans: 3,
+    exp: "LÍMITES DE CRECIMIENTO: Un proceso de crecimiento (acción creciente) se combina con un proceso limitativo (capacidad de la organización, recursos, complejidad). La acción correctiva debe atacar el limitante, no forzar más el crecimiento."
+  }
+];
+let mc4Idx = 0, mc4Score = 0;
+
+// ─── MULTIPLE CHOICE — ACT 5 ─────────────────────────────
+const mc5Questions = [
+  {
+    q: "¿Cómo define el material de la materia a la SIMULACIÓN?",
+    opts: [
+      "Un sistema abstracto donde los elementos que interactúan son conceptos formalizados",
+      "Un conjunto interrelacionado de partes que actúan hacia un fin lógico con entradas y salidas",
+      "Experimentar con un modelo para extraer conclusiones o realizar predicciones",
+      "Una representación detallada y precisa de la realidad sin simplificación"
+    ],
+    ans: 2,
+    exp: "Según el material: SISTEMA = conjunto interrelacionado de partes; MODELO = representación simplificada de un sistema para comprenderlo; SIMULACIÓN = experimentar con un modelo para extraer conclusiones o predicciones."
+  },
+  {
+    q: "¿En qué situaciones es recomendable simular según el material de clase?",
+    opts: [
+      "Solo cuando el sistema real existe y puede ser manipulado directamente",
+      "Cuando la experimentación con el sistema real es peligrosa, costosa o imposible de realizar",
+      "Únicamente para sistemas con soluciones matemáticas analíticas conocidas",
+      "Solo para predecir el futuro a muy corto plazo con alta precisión"
+    ],
+    ans: 1,
+    exp: "Se debe simular cuando no existe el sistema real, cuando experimentar es peligroso o costoso, cuando se necesita estudiar pasado/presente/futuro en tiempo real o expandido, o cuando la modelación matemática directa es imposible."
+  },
+  {
+    q: "¿Qué tipo de simulador se denomina 'de caja negra' según la clasificación del material?",
+    opts: [
+      "Cuando se conocen todas las relaciones causa-efecto internas del simulador",
+      "Cuando solo intervienen computadoras y no hay participación humana",
+      "Cuando no se accede a las relaciones causa-efecto internas del simulador",
+      "Cuando la simulación es exclusivamente para entretenimiento"
+    ],
+    ans: 2,
+    exp: "Clasificación por acceso a relaciones causa-efecto: CAJA NEGRA = no se accede a las relaciones internas; CAJA TRANSPARENTE = se pueden conocer las gráficas causales a través de dinámica de sistemas complejos."
+  }
+];
+let mc5Idx = 0, mc5Score = 0;
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+  updateProgress(id);
+}
+
+const screenOrder = [
+  's-welcome','s-act1-intro','s-act1',
+  's-act2-intro','s-act2',
+  's-act3-intro','s-act3',
+  's-act4-intro','s-act4',
+  's-act5-intro','s-act5',
+  's-final'
+];
+const actScreenMap = {
+  's-act1-intro':0,'s-act1':0,
+  's-act2-intro':1,'s-act2':1,
+  's-act3-intro':2,'s-act3':2,
+  's-act4-intro':3,'s-act4':3,
+  's-act5-intro':4,'s-act5':4,
+  's-final':5
+};
+
+function updateProgress(id) {
+  const idx = screenOrder.indexOf(id);
+  const pct = Math.round((idx / (screenOrder.length-1)) * 100);
+  const pf = document.getElementById('progressFill');
+  if(pf) pf.style.width = pct + '%';
+
+  const actIdx = actScreenMap[id];
+  if(actIdx !== undefined) {
+    document.getElementById('actNum').textContent = Math.min(actIdx+1,5);
+    for(let i=0;i<5;i++){
+      const dot = document.getElementById('step'+i);
+      if(i < actIdx) dot.className='step-dot done';
+      else if(i===actIdx) dot.className='step-dot active';
+      else dot.className='step-dot pending';
+    }
+  }
+  updatePtsDisplay();
+}
+
+function updatePtsDisplay() {
+  document.getElementById('ptsDisplay').textContent = totalPts;
+}
+
+function startGame() {
+  const nm = document.getElementById('playerNameInput').value.trim();
+  playerName = nm || 'Estudiante';
+  document.getElementById('playerNameDisplay').textContent = playerName;
+  document.getElementById('scoreBar').style.display = 'flex';
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('stepIndicator').style.display = 'flex';
+  showScreen('s-act1-intro');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACT 1: MATCHING
+// ═══════════════════════════════════════════════════════════
+let leftSel = null;
+function selectLeft(idx) {
+  if(matchState.matched.has('L'+idx)) return;
+  // deselect prev
+  if(leftSel !== null) document.getElementById('ml-'+leftSel).classList.remove('selected-left');
+  leftSel = idx;
+  document.getElementById('ml-'+idx).classList.add('selected-left');
+}
+
+function selectRight(idx) {
+  if(leftSel === null) return;
+  if(matchState.matched.has('R'+idx)) return;
+
+  const correct = matchAnswers[leftSel] === idx;
+  if(correct) {
+    document.getElementById('ml-'+leftSel).classList.remove('selected-left');
+    document.getElementById('ml-'+leftSel).classList.add('matched');
+    document.getElementById('ml-'+leftSel).onclick = null;
+    document.getElementById('mr-'+idx).classList.add('matched');
+    document.getElementById('mr-'+idx).onclick = null;
+    matchState.matched.add('L'+leftSel);
+    matchState.matched.add('R'+idx);
+    leftSel = null;
+
+    const pts = 10;
+    totalPts += pts; actPts[0] += pts;
+    updatePtsDisplay();
+
+    const matched = matchState.matched.size / 2;
+    const msg = document.getElementById('match-score-msg');
+    msg.textContent = `✔ ¡Correcto! Emparejados: ${matched}/5`;
+    msg.style.color = 'var(--success)';
+
+    if(matched === 5) {
+      setTimeout(() => {
+        document.getElementById('match-feedback').className='feedback-box show ok';
+        document.getElementById('match-feedback').innerHTML='<div class="feedback-title">🎉 ¡Completaste el emparejamiento!</div>Ganaste <strong>'+actPts[0]+' pts</strong> en esta actividad.';
+        document.getElementById('act1-memory').style.display='block';
+        document.getElementById('act1-memory').scrollIntoView({behavior:'smooth'});
+      },400);
+    }
+  } else {
+    matchState.wrong++;
+    // flash wrong
+    const ri = document.getElementById('mr-'+idx);
+    const li = document.getElementById('ml-'+leftSel);
+    ri.classList.add('wrong-match'); li.classList.add('wrong-match');
+    setTimeout(()=>{ ri.classList.remove('wrong-match'); li.classList.remove('wrong-match'); }, 500);
+    document.getElementById('match-score-msg').textContent = '✘ No es correcto. Intentá de nuevo.';
+    document.getElementById('match-score-msg').style.color='var(--error)';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACT 2: TRUE/FALSE
+// ═══════════════════════════════════════════════════════════
+function startTF() {
+  tfIdx = 0; tfScore = 0;
+  renderTF();
+  showScreen('s-act2');
+}
+
+function renderTF() {
+  const q = tfQuestions[tfIdx];
+  document.getElementById('tf-counter').textContent = `Pregunta ${tfIdx+1} de ${tfQuestions.length}`;
+  document.getElementById('tf-question').textContent = q.q;
+  document.getElementById('tf-true').className='tf-btn';
+  document.getElementById('tf-false').className='tf-btn';
+  document.getElementById('tf-true').disabled=false;
+  document.getElementById('tf-false').disabled=false;
+  document.getElementById('tf-feedback').className='feedback-box';
+  document.getElementById('tf-next-btn').style.display='none';
+}
+
+function answerTF(val) {
+  const q = tfQuestions[tfIdx];
+  const correct = val === q.ans;
+  document.getElementById('tf-true').disabled=true;
+  document.getElementById('tf-false').disabled=true;
+
+  if(correct) {
+    document.getElementById(val?'tf-true':'tf-false').classList.add('correct');
+    const pts = 10;
+    tfScore += pts; totalPts += pts; actPts[1] += pts;
+    updatePtsDisplay();
+    document.getElementById('tf-feedback').className='feedback-box show ok';
+    document.getElementById('tf-feedback').innerHTML=`<div class="feedback-title">✔ ¡Correcto! +10 pts</div>${q.exp}`;
+  } else {
+    document.getElementById(val?'tf-true':'tf-false').classList.add('wrong');
+    document.getElementById(q.ans?'tf-true':'tf-false').classList.add('correct');
+    document.getElementById('tf-feedback').className='feedback-box show err';
+    document.getElementById('tf-feedback').innerHTML=`<div class="feedback-title">✘ Incorrecto</div>${q.exp}`;
+  }
+
+  const isLast = tfIdx === tfQuestions.length-1;
+  const nextBtn = document.getElementById('tf-next-btn');
+  nextBtn.style.display='inline-block';
+  nextBtn.textContent = isLast ? 'VER RESUMEN ✓' : 'SIGUIENTE →';
+}
+
+function nextTF() {
+  tfIdx++;
+  if(tfIdx >= tfQuestions.length) {
+    // show memory
+    document.getElementById('tf-card').style.display='none';
+    document.getElementById('act2-memory').style.display='block';
+  } else {
+    document.getElementById('tf-card').style.display='block';
+    renderTF();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACT 3: SORT / DRAG
+// ═══════════════════════════════════════════════════════════
+function startSort() {
+  // shuffle
+  sortCurrentOrder = [...sortItemsData].sort(()=>Math.random()-0.5).map(x=>x.id);
+  renderSort();
+  showScreen('s-act3');
+}
+
+function renderSort() {
+  const list = document.getElementById('sortList');
+  list.innerHTML = '';
+  sortCurrentOrder.forEach((id, idx) => {
+    const item = sortItemsData.find(x=>x.id===id);
+    const div = document.createElement('div');
+    div.className='sort-item'; div.draggable=true; div.dataset.idx=idx;
+    div.innerHTML=`<span class="drag-handle">⠿</span><span class="sort-num">${idx+1}</span><span>${item.label}</span>`;
+    div.addEventListener('dragstart', e=>{ dragSrcIdx=idx; div.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    div.addEventListener('dragend', ()=>{ div.classList.remove('dragging'); document.querySelectorAll('.sort-item').forEach(i=>i.classList.remove('drag-over')); });
+    div.addEventListener('dragover', e=>{ e.preventDefault(); div.classList.add('drag-over'); return false; });
+    div.addEventListener('dragleave', ()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop', e=>{ e.preventDefault(); if(dragSrcIdx===idx) return; const arr=[...sortCurrentOrder]; const [moved]=arr.splice(dragSrcIdx,1); arr.splice(idx,0,moved); sortCurrentOrder=arr; renderSort(); });
+    list.appendChild(div);
+  });
+  document.getElementById('sort-feedback').className='feedback-box';
+  document.getElementById('sortCheckBtn').style.display='inline-block';
+}
+
+function checkSort() {
+  const correct = sortCurrentOrder.join(',')===sortCorrectOrder.join(',');
+  const fb = document.getElementById('sort-feedback');
+  if(correct) {
+    const pts = 30;
+    totalPts += pts; actPts[2] += pts;
+    updatePtsDisplay();
+    fb.className='feedback-box show ok';
+    fb.innerHTML=`<div class="feedback-title">🎉 ¡Orden correcto! +${pts} pts</div>Identificaste correctamente el flujo del arquetipo "Desplazamiento de la Carga".`;
+    document.getElementById('sortCheckBtn').style.display='none';
+    setTimeout(()=>{ document.getElementById('act3-memory').style.display='block'; document.getElementById('act3-memory').scrollIntoView({behavior:'smooth'}); },400);
+  } else {
+    // partial scoring: count how many are in correct position
+    let correct_pos = 0;
+    sortCurrentOrder.forEach((id,i)=>{ if(id===sortCorrectOrder[i]) correct_pos++; });
+    fb.className='feedback-box show err';
+    fb.innerHTML=`<div class="feedback-title">✘ Orden incorrecto</div>${correct_pos} de 5 elementos en posición correcta. Intentá reorganizar el flujo del ciclo.`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACT 4 & 5: MULTIPLE CHOICE
+// ═══════════════════════════════════════════════════════════
+function startMC(act) {
+  if(act==='act4') { mc4Idx=0; mc4Score=0; renderMC('act4'); showScreen('s-act4'); }
+  else             { mc5Idx=0; mc5Score=0; renderMC('act5'); showScreen('s-act5'); }
+}
+
+function renderMC(act) {
+  const isAct4 = act==='act4';
+  const questions = isAct4 ? mc4Questions : mc5Questions;
+  const idx = isAct4 ? mc4Idx : mc5Idx;
+  const q = questions[idx];
+  const total = questions.length;
+  const prefix = isAct4?'mc4':'mc5';
+
+  document.getElementById(`${prefix}-counter`).textContent=`Pregunta ${idx+1} de ${total}`;
+  document.getElementById(`${prefix}-question`).textContent=q.q;
+  const opts = document.getElementById(`${prefix}-options`);
+  opts.innerHTML='';
+  const letters=['A','B','C','D'];
+  q.opts.forEach((o,i)=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn';
+    btn.innerHTML=`<span class="opt-letter">${letters[i]}</span><span>${o}</span>`;
+    btn.onclick=()=>answerMC(act,i);
+    opts.appendChild(btn);
+  });
+  document.getElementById(`${prefix}-feedback`).className='feedback-box';
+  document.getElementById(`${prefix}-next-btn`).style.display='none';
+}
+
+function answerMC(act, chosen) {
+  const isAct4 = act==='act4';
+  const questions = isAct4 ? mc4Questions : mc5Questions;
+  const idx = isAct4 ? mc4Idx : mc5Idx;
+  const q = questions[idx];
+  const prefix = isAct4?'mc4':'mc5';
+  const opts = document.getElementById(`${prefix}-options`).querySelectorAll('.option-btn');
+
+  opts.forEach(b=>b.disabled=true);
+  opts[q.ans].classList.add('correct');
+  if(chosen!==q.ans) opts[chosen].classList.add('wrong');
+
+  const correct = chosen===q.ans;
+  const pts = 10;
+  const fb = document.getElementById(`${prefix}-feedback`);
+
+  if(correct) {
+    if(isAct4){ mc4Score+=pts; actPts[3]+=pts; }
+    else      { mc5Score+=pts; actPts[4]+=pts; }
+    totalPts += pts; updatePtsDisplay();
+    fb.className='feedback-box show ok';
+    fb.innerHTML=`<div class="feedback-title">✔ ¡Correcto! +${pts} pts</div>${q.exp}`;
+  } else {
+    fb.className='feedback-box show err';
+    fb.innerHTML=`<div class="feedback-title">✘ Incorrecto. La correcta era la ${['A','B','C','D'][q.ans]}</div>${q.exp}`;
+  }
+
+  const isLast = idx === questions.length-1;
+  const nextBtn = document.getElementById(`${prefix}-next-btn`);
+  nextBtn.style.display='inline-block';
+  nextBtn.textContent = isLast ? 'VER RESUMEN ✓' : 'SIGUIENTE →';
+}
+
+function nextMC(act) {
+  const isAct4 = act==='act4';
+  const questions = isAct4 ? mc4Questions : mc5Questions;
+  const prefix = isAct4?'mc4':'mc5';
+  const actNum = isAct4?3:4;
+
+  if(isAct4) mc4Idx++; else mc5Idx++;
+  const idx = isAct4 ? mc4Idx : mc5Idx;
+
+  if(idx >= questions.length) {
+    document.getElementById(`${isAct4?'mc4':'mc5'}-card`).style.display='none';
+    document.getElementById(`act${actNum+1}-memory`).style.display='block';
+  } else {
+    document.getElementById(`${prefix}-card`).style.display='block';
+    renderMC(act);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FINAL
+// ═══════════════════════════════════════════════════════════
+function showFinal() {
+  // Update breakdown
+  ['bd1','bd2','bd3','bd4','bd5'].forEach((id,i)=>{
+    document.getElementById(id).textContent = actPts[i]+' pts';
+  });
+
+  document.getElementById('finalScoreBig').textContent = totalPts;
+
+  const pct = totalPts / 200;
+  let trophy='🏆', rankTitle, badgeText, badgeColor;
+  if(pct>=0.9)      { trophy='🥇'; rankTitle='¡Maestro Sistémico!'; badgeText='NIVEL: EXPERTO'; badgeColor='linear-gradient(135deg,#ffd60a,#e9c46a)'; }
+  else if(pct>=0.75) { trophy='🥈'; rankTitle='¡Gran Desempeño!'; badgeText='NIVEL: AVANZADO'; badgeColor='linear-gradient(135deg,#90e0ef,#00b4d8)'; }
+  else if(pct>=0.5)  { trophy='🥉'; rankTitle='¡Buen Camino!'; badgeText='NIVEL: INTERMEDIO'; badgeColor='linear-gradient(135deg,#b7e4c7,#52b788)'; }
+  else if(pct>=0.3)  { trophy='📚'; rankTitle='Seguí Practicando'; badgeText='NIVEL: EN DESARROLLO'; badgeColor='linear-gradient(135deg,#e76f51,#f4a261)'; }
+  else               { trophy='💡'; rankTitle='¡Repasá los Arquetipos!'; badgeText='NIVEL: INICIAL'; badgeColor='linear-gradient(135deg,#8d99ae,#adb5bd)'; }
+
+  document.getElementById('finalTrophy').textContent = trophy;
+  document.getElementById('finalRankTitle').textContent = rankTitle;
+  const badge = document.getElementById('finalBadge');
+  badge.textContent = badgeText;
+  badge.style.background = badgeColor;
+  badge.style.color = '#050a18';
+
+  document.getElementById('finalShareText').textContent = `${playerName} — ${totalPts}/200 pts — ${badgeText}`;
+
+  showScreen('s-final');
+}
+
+function restartGame() {
+  totalPts=0; actPts=[0,0,0,0,0];
+  tfIdx=0; tfScore=0; mc4Idx=0; mc4Score=0; mc5Idx=0; mc5Score=0;
+  matchState={selected:null,matched:new Set(),wrong:0}; leftSel=null;
+
+  // reset matching
+  for(let i=0;i<5;i++){
+    const l=document.getElementById('ml-'+i), r=document.getElementById('mr-'+i);
+    l.className='match-item'; l.onclick=()=>selectLeft(i);
+    r.className='match-item'; r.onclick=()=>selectRight(i);
+  }
+  document.getElementById('match-feedback').className='feedback-box';
+  document.getElementById('match-score-msg').textContent='';
+  document.getElementById('act1-memory').style.display='none';
+
+  // reset tf
+  document.getElementById('tf-card').style.display='block';
+  document.getElementById('act2-memory').style.display='none';
+
+  // reset mc4/5
+  document.getElementById('mc4-card').style.display='block';
+  document.getElementById('act4-memory').style.display='none';
+  document.getElementById('mc5-card').style.display='block';
+  document.getElementById('act5-memory').style.display='none';
+  document.getElementById('act3-memory').style.display='none';
+
+  updatePtsDisplay();
+  showScreen('s-welcome');
+}
+</script>
+</body>
+</html>
