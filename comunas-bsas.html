@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunas de Buenos Aires — Juego de Estudio</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --c1:#E63946; --c2:#457B9D; --c3:#2A9D8F; --c4:#E9C46A; --c5:#F4A261;
+    --c6:#A8DADC; --c7:#264653; --c8:#6A4C93; --c9:#F77F00; --c10:#43AA8B;
+    --c11:#577590; --c12:#F94144; --c13:#90BE6D; --c14:#F3722C; --c15:#43BCCD;
+    --white:#FFFFFF; --off:#F8F9FA; --border:#E9ECEF; --text:#212529; --muted:#6C757D;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+    --radius:16px; --radius-sm:10px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Nunito',sans-serif; background:#fff; color:var(--text); min-height:100vh; }
+
+  /* ─── HEADER ─── */
+  .header { background:#fff; border-bottom:2px solid var(--border); padding:18px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .logo { font-family:'Fredoka One',cursive; font-size:26px; color:var(--c1); letter-spacing:0.5px; }
+  .logo span { color:var(--c2); }
+  .score-strip { display:flex; gap:12px; }
+  .score-chip { background:var(--off); border:1.5px solid var(--border); border-radius:50px; padding:6px 16px; font-size:14px; font-weight:700; display:flex; align-items:center; gap:6px; }
+  .score-chip .dot { width:10px; height:10px; border-radius:50%; }
+
+  /* ─── NAV TABS ─── */
+  .tabs { display:flex; gap:8px; padding:20px 24px 0; overflow-x:auto; }
+  .tab { font-family:'Nunito',sans-serif; font-weight:700; font-size:15px; padding:10px 22px; border:2px solid var(--border); border-radius:50px; cursor:pointer; background:#fff; color:var(--muted); transition:all .2s; white-space:nowrap; }
+  .tab:hover { border-color:#aaa; color:var(--text); }
+  .tab.active { background:var(--c2); border-color:var(--c2); color:#fff; }
+
+  /* ─── PANELS ─── */
+  .panel { display:none; padding:24px; animation:fadeIn .3s ease; }
+  .panel.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ─── STUDY PANEL ─── */
+  .study-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+  .comuna-card {
+    border-radius:var(--radius); padding:16px 18px;
+    border:2px solid transparent;
+    background:#fff; box-shadow:var(--shadow);
+    transition:transform .15s, box-shadow .15s;
+    cursor:default;
+  }
+  .comuna-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+  .card-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .num-badge {
+    width:42px; height:42px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka One',cursive; font-size:20px; color:#fff;
+    flex-shrink:0;
+  }
+  .card-name { font-size:17px; font-weight:800; color:var(--text); }
+  .barrios-wrap { display:flex; flex-wrap:wrap; gap:5px; }
+  .barrio-tag {
+    font-size:12px; font-weight:600; padding:3px 10px;
+    border-radius:50px; border:1.5px solid;
+  }
+
+  /* ─── GAME PANEL ─── */
+  .game-modes { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .mode-btn { font-family:'Nunito',sans-serif; font-weight:700; font-size:13px; padding:8px 18px; border:2px solid var(--border); border-radius:50px; cursor:pointer; background:#fff; color:var(--muted); transition:all .2s; }
+  .mode-btn.active { background:var(--c3); border-color:var(--c3); color:#fff; }
+
+  .progress-wrap { margin-bottom:16px; }
+  .progress-info { display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+  .progress-bar { height:8px; background:var(--border); border-radius:50px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--c2),var(--c3)); border-radius:50px; transition:width .4s cubic-bezier(.4,0,.2,1); }
+
+  .q-card { background:#fff; border:2px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .q-eyebrow { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px; }
+  .q-text { font-size:20px; font-weight:800; line-height:1.4; color:var(--text); }
+  .q-hint { font-size:13px; color:var(--muted); margin-top:6px; font-weight:600; }
+
+  .opts-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .opt { font-family:'Nunito',sans-serif; font-weight:700; font-size:15px; padding:14px 16px; border:2px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; background:#fff; color:var(--text); text-align:left; transition:all .15s; line-height:1.4; }
+  .opt:hover:not(:disabled) { border-color:#aaa; background:var(--off); transform:scale(1.01); }
+  .opt.correct { background:#D4EDDA; border-color:#28A745; color:#155724; }
+  .opt.wrong { background:#F8D7DA; border-color:#DC3545; color:#721C24; }
+  .opt:disabled { cursor:default; }
+
+  .feedback-box { padding:12px 18px; border-radius:var(--radius-sm); font-size:15px; font-weight:700; margin-bottom:14px; display:none; align-items:center; gap:10px; }
+  .feedback-box.show { display:flex; }
+  .feedback-box.ok { background:#D4EDDA; color:#155724; border:2px solid #28A745; }
+  .feedback-box.fail { background:#F8D7DA; color:#721C24; border:2px solid #DC3545; }
+  .fb-icon { font-size:22px; }
+
+  .next-btn { font-family:'Nunito',sans-serif; font-weight:800; font-size:16px; padding:13px 30px; border:none; border-radius:50px; cursor:pointer; background:var(--c2); color:#fff; display:none; transition:all .15s; box-shadow:0 4px 12px rgba(69,123,157,0.35); }
+  .next-btn:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(69,123,157,0.45); }
+  .next-btn.show { display:inline-block; }
+
+  /* ─── GAMEOVER ─── */
+  #game-over { display:none; text-align:center; padding:40px 20px; animation:fadeIn .4s ease; }
+  .trophy { font-size:80px; margin-bottom:16px; animation:bounce 1s ease infinite alternate; }
+  @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+  .go-title { font-family:'Fredoka One',cursive; font-size:36px; color:var(--text); margin-bottom:8px; }
+  .go-score { font-family:'Fredoka One',cursive; font-size:72px; margin:16px 0; }
+  .go-stars { font-size:40px; margin-bottom:16px; letter-spacing:4px; }
+  .go-msg { font-size:18px; font-weight:700; color:var(--muted); max-width:400px; margin:0 auto 28px; line-height:1.5; }
+  .go-stats { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:28px; }
+  .go-stat { background:var(--off); border:2px solid var(--border); border-radius:var(--radius); padding:16px 24px; text-align:center; }
+  .go-stat-val { font-family:'Fredoka One',cursive; font-size:32px; }
+  .go-stat-label { font-size:13px; font-weight:700; color:var(--muted); margin-top:2px; }
+  .prize-box { background:linear-gradient(135deg,#FFF9E6,#FFF3CD); border:2px solid #FFD700; border-radius:var(--radius); padding:20px 28px; max-width:420px; margin:0 auto 28px; }
+  .prize-title { font-family:'Fredoka One',cursive; font-size:20px; color:#856404; margin-bottom:6px; }
+  .prize-text { font-size:15px; font-weight:700; color:#664d03; line-height:1.5; }
+  .restart-btn { font-family:'Nunito',sans-serif; font-weight:800; font-size:16px; padding:14px 36px; border:none; border-radius:50px; cursor:pointer; background:var(--c1); color:#fff; transition:all .15s; box-shadow:0 4px 14px rgba(230,57,70,0.35); }
+  .restart-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(230,57,70,0.45); }
+
+  /* ─── MAP PANEL ─── */
+  .map-container { display:grid; grid-template-columns:1fr 320px; gap:20px; }
+  @media(max-width:700px){ .map-container{grid-template-columns:1fr;} .opts-grid{grid-template-columns:1fr;} }
+  .map-wrap { background:var(--off); border:2px solid var(--border); border-radius:var(--radius); padding:16px; }
+  .map-wrap svg { width:100%; height:auto; display:block; }
+  .map-side { display:flex; flex-direction:column; gap:12px; }
+  .map-info-card { background:#fff; border:2px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); flex:1; }
+  .map-hint { font-size:13px; color:var(--muted); font-weight:600; text-align:center; padding:30px 0; }
+  .map-sel-num { font-family:'Fredoka One',cursive; font-size:48px; }
+  .map-sel-name { font-size:18px; font-weight:800; margin-bottom:12px; }
+  .comarca-path { cursor:pointer; stroke:#fff; stroke-width:1.5; transition:opacity .15s, filter .15s; }
+  .comarca-path:hover { filter:brightness(1.12); }
+
+  /* ─── CONFETTI ─── */
+  .confetti-piece { position:fixed; top:-10px; width:10px; height:10px; border-radius:2px; animation:confetti-fall linear forwards; pointer-events:none; z-index:999; }
+  @keyframes confetti-fall { to{transform:translateY(110vh) rotate(720deg); opacity:0;} }
+
+  /* ─── RESPONSIVE ─── */
+  @media(max-width:480px){
+    .header { padding:14px 16px; }
+    .logo { font-size:20px; }
+    .tabs { padding:14px 16px 0; }
+    .panel { padding:16px; }
+    .q-text { font-size:17px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Comunas<span>BA</span></div>
+  <div class="score-strip">
+    <div class="score-chip"><div class="dot" style="background:#28A745"></div><span id="hdr-ok">0</span> bien</div>
+    <div class="score-chip"><div class="dot" style="background:#DC3545"></div><span id="hdr-fail">0</span> mal</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('study')">📚 Estudiar</button>
+  <button class="tab" onclick="showTab('map')">🗺️ Mapa</button>
+  <button class="tab" onclick="showTab('game')">🎮 Jugar</button>
+</div>
+
+<!-- ══════════ STUDY ══════════ -->
+<div id="panel-study" class="panel active">
+  <div class="study-grid" id="study-grid"></div>
+</div>
+
+<!-- ══════════ MAP ══════════ -->
+<div id="panel-map" class="panel">
+  <div class="map-container">
+    <div class="map-wrap">
+      <svg viewBox="0 0 520 560" xmlns="http://www.w3.org/2000/svg">
+        <!-- CABA aproximada en 15 zonas -->
+        <polygon class="comarca-path" data-id="13" fill="#E63946" points="150,10 270,10 270,95 230,105 190,95 150,75" onclick="selMap(13)"/>
+        <polygon class="comarca-path" data-id="14" fill="#457B9D" points="90,55 150,10 150,75 190,95 190,145 130,155 90,120" onclick="selMap(14)"/>
+        <polygon class="comarca-path" data-id="12" fill="#2A9D8F" points="270,10 390,10 390,105 325,115 270,95" onclick="selMap(12)"/>
+        <polygon class="comarca-path" data-id="15" fill="#E9C46A" points="70,120 90,55 90,120 130,155 130,200 70,200" onclick="selMap(15)"/>
+        <polygon class="comarca-path" data-id="2"  fill="#F4A261" points="190,95 230,105 270,95 270,165 230,170 190,145" onclick="selMap(2)"/>
+        <polygon class="comarca-path" data-id="11" fill="#A8DADC" points="70,200 130,200 130,270 70,270" onclick="selMap(11)"/>
+        <polygon class="comarca-path" data-id="6"  fill="#6A4C93" points="130,200 190,200 190,270 130,270" onclick="selMap(6)"/>
+        <polygon class="comarca-path" data-id="5"  fill="#F77F00" points="190,200 260,200 260,270 190,270" onclick="selMap(5)"/>
+        <polygon class="comarca-path" data-id="3"  fill="#43AA8B" points="260,200 320,200 320,270 260,270" onclick="selMap(3)"/>
+        <polygon class="comarca-path" data-id="1"  fill="#577590" points="320,145 390,105 430,115 440,185 390,215 320,200" onclick="selMap(1)"/>
+        <polygon class="comarca-path" data-id="10" fill="#F94144" points="30,270 130,270 130,350 70,350 30,330" onclick="selMap(10)"/>
+        <polygon class="comarca-path" data-id="7"  fill="#90BE6D" points="130,270 190,270 190,360 130,360" onclick="selMap(7)"/>
+        <polygon class="comarca-path" data-id="4"  fill="#F3722C" points="260,270 390,270 410,300 410,370 365,390 290,390 260,370" onclick="selMap(4)"/>
+        <polygon class="comarca-path" data-id="8"  fill="#43BCCD" points="130,360 260,360 260,450 190,460 130,440" onclick="selMap(8)"/>
+        <polygon class="comarca-path" data-id="9"  fill="#264653" points="30,330 130,350 130,440 70,450 30,420" onclick="selMap(9)"/>
+        <!-- números -->
+        <text x="210" y="55" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">13</text>
+        <text x="125" y="95" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">14</text>
+        <text x="330" y="60" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">12</text>
+        <text x="100" y="165" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">15</text>
+        <text x="230" y="140" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">2</text>
+        <text x="100" y="238" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">11</text>
+        <text x="160" y="238" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">6</text>
+        <text x="225" y="238" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">5</text>
+        <text x="290" y="238" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">3</text>
+        <text x="380" y="170" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">1</text>
+        <text x="80" y="312" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">10</text>
+        <text x="160" y="318" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">7</text>
+        <text x="335" y="330" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">4</text>
+        <text x="195" y="410" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">8</text>
+        <text x="80" y="395" font-size="14" fill="white" font-weight="bold" text-anchor="middle" pointer-events="none" font-family="Fredoka One,cursive">9</text>
+      </svg>
+    </div>
+    <div class="map-side">
+      <div class="map-info-card">
+        <div id="map-detail"><div class="map-hint">Tocá una comuna en el mapa para ver sus barrios</div></div>
+      </div>
+      <div style="background:var(--off);border:2px solid var(--border);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px;">REFERENCIAS</div>
+        <div id="legend" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ GAME ══════════ -->
+<div id="panel-game" class="panel">
+  <div id="game-active">
+    <div class="game-modes">
+      <span style="font-size:13px;font-weight:700;color:var(--muted);align-self:center;">Tipo:</span>
+      <button class="mode-btn active" id="mode-num" onclick="setMode('num')">🔢 ¿Qué número es?</button>
+      <button class="mode-btn" id="mode-barrio" onclick="setMode('barrio')">📍 ¿A qué comuna pertenece?</button>
+      <button class="mode-btn" id="mode-has" onclick="setMode('has')">🏘️ ¿Qué barrio tiene?</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span id="q-counter">Pregunta 1 de 10</span><span id="q-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    </div>
+    <div class="q-card">
+      <div class="q-eyebrow" id="q-eyebrow">Pregunta</div>
+      <div class="q-text" id="q-text">Cargando…</div>
+      <div class="q-hint" id="q-hint"></div>
+    </div>
+    <div class="opts-grid" id="opts"></div>
+    <div class="feedback-box" id="feedback"><span class="fb-icon" id="fb-icon"></span><span id="fb-text"></span></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">Siguiente →</button>
+  </div>
+  <div id="game-over">
+    <div class="trophy" id="trophy">🏆</div>
+    <div class="go-title" id="go-title">¡Terminaste!</div>
+    <div class="go-score" id="go-score" style="color:var(--c2)"></div>
+    <div class="go-stars" id="go-stars"></div>
+    <div class="go-stats">
+      <div class="go-stat"><div class="go-stat-val" style="color:#28A745" id="gs-ok">0</div><div class="go-stat-label">Correctas</div></div>
+      <div class="go-stat"><div class="go-stat-val" style="color:#DC3545" id="gs-fail">0</div><div class="go-stat-label">Incorrectas</div></div>
+      <div class="go-stat"><div class="go-stat-val" style="color:var(--c4)" id="gs-pct">0%</div><div class="go-stat-label">Puntaje</div></div>
+    </div>
+    <div class="prize-box" id="prize-box">
+      <div class="prize-title">🎖️ Tu Premio</div>
+      <div class="prize-text" id="prize-text"></div>
+    </div>
+    <div class="go-msg" id="go-msg"></div>
+    <button class="restart-btn" onclick="restartGame()">🔄 Jugar de nuevo</button>
+  </div>
+</div>
+
+<script>
+const COMUNAS = [
+  {n:1,  color:"#577590", barrios:["Constitución","Monserrat","Puerto Madero","Retiro","San Nicolás","San Telmo"]},
+  {n:2,  color:"#F4A261", barrios:["Recoleta"]},
+  {n:3,  color:"#43AA8B", barrios:["Balvanera","San Cristóbal"]},
+  {n:4,  color:"#F3722C", barrios:["La Boca","Barracas","Nueva Pompeya","Parque Patricios"]},
+  {n:5,  color:"#F77F00", barrios:["Almagro","Boedo"]},
+  {n:6,  color:"#6A4C93", barrios:["Caballito"]},
+  {n:7,  color:"#90BE6D", barrios:["Flores","Parque Chacabuco"]},
+  {n:8,  color:"#43BCCD", barrios:["Villa Soldati","Villa Riachuelo","Villa Lugano"]},
+  {n:9,  color:"#264653", barrios:["Liniers","Mataderos","Parque Avellaneda"]},
+  {n:10, color:"#F94144", barrios:["Floresta","Monte Castro","Vélez Sársfield","Versalles","Villa Luro","Villa Real"]},
+  {n:11, color:"#A8DADC", barrios:["Villa Gral. Mitre","Villa Santa Rita","Villa del Parque","Villa Devoto"]},
+  {n:12, color:"#2A9D8F", barrios:["Coghlan","Saavedra","Villa Urquiza","Villa Pueyrredón"]},
+  {n:13, color:"#E63946", barrios:["Belgrano","Colegiales","Núñez"]},
+  {n:14, color:"#457B9D", barrios:["Palermo"]},
+  {n:15, color:"#E9C46A", barrios:["Agronomía","Chacarita","La Paternal","Parque Chas","Villa Ortúzar","Villa del Parque"]}
+];
+
+// ─── STUDY ───
+const sg = document.getElementById('study-grid');
+COMUNAS.forEach(c => {
+  const lighten = c.color+'22';
+  const html = `<div class="comuna-card" style="border-color:${c.color}40;">
+    <div class="card-top">
+      <div class="num-badge" style="background:${c.color};">${c.n}</div>
+      <div><div class="card-name">Comuna ${c.n}</div><div style="font-size:12px;font-weight:600;color:${c.color};">${c.barrios.length} barrio${c.barrios.length>1?'s':''}</div></div>
+    </div>
+    <div class="barrios-wrap">
+      ${c.barrios.map(b=>`<span class="barrio-tag" style="background:${lighten};color:${c.color};border-color:${c.color}44;">${b}</span>`).join('')}
+    </div>
+  </div>`;
+  sg.innerHTML += html;
+});
+
+// ─── MAP ───
+const legend = document.getElementById('legend');
+COMUNAS.forEach(c => {
+  legend.innerHTML += `<div style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:700;" onclick="selMap(${c.n})">
+    <div style="width:14px;height:14px;border-radius:4px;background:${c.color};flex-shrink:0;"></div>
+    <span>C${c.n}</span>
+    <span style="font-weight:600;color:#6c757d;font-size:12px;">${c.barrios[0]}${c.barrios.length>1?'…':''}</span>
+  </div>`;
+});
+
+function selMap(id) {
+  const c = COMUNAS.find(x=>x.n===id);
+  if(!c) return;
+  document.querySelectorAll('.comarca-path').forEach(el=>el.style.opacity='0.4');
+  document.querySelector(`[data-id="${id}"]`).style.opacity='1';
+  const lighten = c.color+'18';
+  document.getElementById('map-detail').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="width:52px;height:52px;border-radius:14px;background:${c.color};display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:24px;color:#fff;flex-shrink:0;">${c.n}</div>
+      <div><div style="font-size:18px;font-weight:800;">Comuna ${c.n}</div><div style="font-size:13px;color:#6c757d;font-weight:600;">${c.barrios.length} barrio${c.barrios.length>1?'s':''}</div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${c.barrios.map(b=>`<span style="font-size:13px;font-weight:700;padding:4px 12px;border-radius:50px;background:${lighten};color:${c.color};border:1.5px solid ${c.color}44;">${b}</span>`).join('')}
+    </div>`;
+}
+
+// ─── GAME ───
+const TOTAL = 10;
+let mode='num', questions=[], qi=0, scoreOk=0, scoreFail=0, answered=false, gameStarted=false;
+
+function showTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['study','map','game'][i]===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  if(t==='game' && !gameStarted){ gameStarted=true; startGame(); }
+}
+
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode-'+m).classList.add('active');
+  restartGame();
+}
+
+function shuffle(a){return [...a].sort(()=>Math.random()-.5);}
+
+function buildQ(){
+  const pool=[];
+  if(mode==='num'){
+    COMUNAS.forEach(c=>{
+      const wrong=shuffle(COMUNAS.filter(x=>x.n!==c.n)).slice(0,3).map(x=>`${x.n}`);
+      pool.push({q:`¿Cuál es el número de la comuna que incluye el barrio de <strong>${c.barrios[0]}</strong>?`, correct:`${c.n}`, opts:shuffle([`${c.n}`,...wrong]), hint:'Pensá en qué zona está ese barrio.'});
+    });
+  } else if(mode==='barrio'){
+    COMUNAS.forEach(c=>{
+      const b=c.barrios[Math.floor(Math.random()*c.barrios.length)];
+      const wrong=shuffle(COMUNAS.filter(x=>x.n!==c.n)).slice(0,3).map(x=>`Comuna ${x.n}`);
+      pool.push({q:`¿A qué comuna pertenece el barrio de <strong>${b}</strong>?`, correct:`Comuna ${c.n}`, opts:shuffle([`Comuna ${c.n}`,...wrong]), hint:`Tiene ${c.barrios.length} barrio${c.barrios.length>1?'s':''} en total.`});
+    });
+  } else {
+    COMUNAS.forEach(c=>{
+      const b=c.barrios[Math.floor(Math.random()*c.barrios.length)];
+      const fakes=shuffle(COMUNAS.filter(x=>x.n!==c.n).flatMap(x=>x.barrios)).slice(0,3);
+      pool.push({q:`¿Cuál de estos barrios pertenece a la <strong>Comuna ${c.n}</strong>?`, correct:b, opts:shuffle([b,...fakes]), hint:`La Comuna ${c.n} tiene ${c.barrios.length} barrio${c.barrios.length>1?'s':''}.`});
+    });
+  }
+  return shuffle(pool).slice(0,TOTAL);
+}
+
+function startGame(){
+  qi=0; scoreOk=0; scoreFail=0; answered=false;
+  questions=buildQ();
+  document.getElementById('game-active').style.display='block';
+  document.getElementById('game-over').style.display='none';
+  updHdr(); renderQ();
+}
+
+function renderQ(){
+  if(qi>=TOTAL){showGameOver();return;}
+  answered=false;
+  const q=questions[qi];
+  const pct=Math.round((qi/TOTAL)*100);
+  document.getElementById('q-counter').textContent=`Pregunta ${qi+1} de ${TOTAL}`;
+  document.getElementById('q-pct').textContent=pct+'%';
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('q-eyebrow').textContent=`Pregunta ${qi+1} de ${TOTAL}`;
+  document.getElementById('q-text').innerHTML=q.q;
+  document.getElementById('q-hint').textContent='💡 '+q.hint;
+  const fb=document.getElementById('feedback');
+  fb.className='feedback-box'; document.getElementById('next-btn').className='next-btn';
+  const opts=document.getElementById('opts');
+  opts.innerHTML='';
+  q.opts.forEach(o=>{
+    const btn=document.createElement('button');
+    btn.className='opt'; btn.textContent=o;
+    btn.onclick=()=>answer(o,q.correct);
+    opts.appendChild(btn);
+  });
+}
+
+function answer(chosen,correct){
+  if(answered)return;
+  answered=true;
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===correct) b.classList.add('correct');
+    else if(b.textContent===chosen && chosen!==correct) b.classList.add('wrong');
+  });
+  const ok=chosen===correct;
+  if(ok){scoreOk++; setFeedback(true,'¡Muy bien! Respuesta correcta 🎉');}
+  else {scoreFail++; setFeedback(false,`Incorrecto. Era: <strong>${correct}</strong>`);}
+  updHdr();
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function setFeedback(ok,msg){
+  const fb=document.getElementById('feedback');
+  document.getElementById('fb-icon').textContent=ok?'✅':'❌';
+  document.getElementById('fb-text').innerHTML=msg;
+  fb.className='feedback-box show '+(ok?'ok':'fail');
+}
+
+function nextQ(){qi++;renderQ();}
+
+function updHdr(){
+  document.getElementById('hdr-ok').textContent=scoreOk;
+  document.getElementById('hdr-fail').textContent=scoreFail;
+}
+
+const PRIZES = [
+  {min:100,trophy:'🏆',title:'¡Campeón de las Comunas!',stars:'⭐⭐⭐⭐⭐',msg:'¡Perfecto! Sos un verdadero experto en la geografía de Buenos Aires.',prize:'Medalla de Oro — Geógrafo Porteño Nivel 5'},
+  {min:80, trophy:'🥇',title:'¡Excelente resultado!',stars:'⭐⭐⭐⭐',msg:'¡Muy bien! Conocés muy bien las comunas. Seguí así.',prize:'Medalla de Plata — Explorador de Buenos Aires'},
+  {min:60, trophy:'🥈',title:'¡Buen trabajo!',stars:'⭐⭐⭐',msg:'Bien hecho. Repasá un poco más y vas a llegar al 100%.',prize:'Estrella de Bronce — Vecino Conocedor'},
+  {min:40, trophy:'📚',title:'¡Vas por buen camino!',stars:'⭐⭐',msg:'Estudiá un poco más las comunas que te costaron y volvé a intentarlo.',prize:'Diploma de Estudio — ¡Seguí aprendiendo!'},
+  {min:0,  trophy:'💪',title:'¡No te rindas!',stars:'⭐',msg:'La práctica hace al maestro. Repasá la sección de Estudio y volvé a jugar.',prize:'Trofeo de Constancia — ¡El esfuerzo vale!'}
+];
+
+function showGameOver(){
+  document.getElementById('game-active').style.display='none';
+  document.getElementById('game-over').style.display='block';
+  const pct=Math.round((scoreOk/TOTAL)*100);
+  const p=PRIZES.find(x=>pct>=x.min);
+  document.getElementById('trophy').textContent=p.trophy;
+  document.getElementById('go-title').textContent=p.title;
+  document.getElementById('go-score').textContent=`${scoreOk} / ${TOTAL}`;
+  document.getElementById('go-stars').textContent=p.stars;
+  document.getElementById('go-msg').textContent=p.msg;
+  document.getElementById('gs-ok').textContent=scoreOk;
+  document.getElementById('gs-fail').textContent=scoreFail;
+  document.getElementById('gs-pct').textContent=pct+'%';
+  document.getElementById('prize-text').textContent=p.prize;
+  if(pct>=80) launchConfetti();
+}
+
+function restartGame(){
+  qi=0;scoreOk=0;scoreFail=0;answered=false;
+  questions=buildQ();
+  document.getElementById('game-active').style.display='block';
+  document.getElementById('game-over').style.display='none';
+  updHdr(); renderQ();
+}
+
+function launchConfetti(){
+  const colors=['#E63946','#457B9D','#2A9D8F','#E9C46A','#F4A261','#6A4C93'];
+  for(let i=0;i<80;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;background:${colors[i%colors.length]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*1}s;border-radius:${Math.random()>0.5?'50%':'2px'}`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),(4000+i*30));
+  }
+}
+</script>
+</body>
+</html>
